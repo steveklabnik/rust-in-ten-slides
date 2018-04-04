@@ -21,7 +21,8 @@ expanding on this idea might bear some interesting fruit!
 2. Slides are written in Markdown inside the file using [Remark](https://remarkjs.com/#1),
    check that link for examples of the syntax.
 3. Open the file in your web browser to see the presentation in action!
-4. Send me a pull request!
+4. Modify `index.html` to include your new presentation.
+5. Send me a pull request!
 
 ## License
 
