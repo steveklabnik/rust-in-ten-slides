@@ -16,6 +16,31 @@ class: middle, center
 ---
 class: middle, left
 
+# Comments
+
+Rust has two main kinds of comments.
+
+Regular comments for your own use:
+
+```rust
+// Put whatever you'd like here, Rust doesn't care
+```
+
+And doc comments:
+
+```rust
+/// This comment documents the `foo` function.
+///
+/// You can use the `rustdoc` tool via `cargo doc` to generate
+/// HTML documentation from these comments!
+fn foo() {
+    // ...
+}
+```
+
+---
+class: middle, left
+
 # Variables
 
 `let` introduces new variables:
@@ -120,31 +145,6 @@ You can debug print with `{:?}`:
 ```rust
 println!("Display: {}", "hello"); // prints "Display: hello"
 println!("Debug: {:?}", "hello"); // prints "Debug: "hello""
-```
-
----
-class: middle, left
-
-# Comments
-
-Rust has two main kinds of comments.
-
-Regular comments for your own use:
-
-```rust
-// Put whatever you'd like here, Rust doesn't care
-```
-
-And doc comments:
-
-```rust
-/// This comment documents the `foo` function.
-///
-/// You can use the `rustdoc` tool via `cargo doc` to generate
-/// HTML documentation from these comments!
-fn foo() {
-    // ...
-}
 ```
 
 ---
