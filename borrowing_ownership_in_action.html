@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Rust in ten slides</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body>
+  <textarea id="source">
+class: middle, center
+
+# Borrowing and ownership 
+
+## In Action!
+
+---
+class: middle, left
+
+# Each data has a lifetime
+
+A (computer) data is an information processed or stored by a computer. [1]
+
+A data has a **lifetime**, limited between one instruction execution and the entire lifetime of the program that is using it.  
+In Rust, you **do not** manage yourself the lifetime of your data, but let to principles do it for you:  
+* the **ownership**, where you own **the data**,
+* and the **borrowing**, where you own **a reference to the data**.
+
+```rust
+let titanic_dvd: DVD = DVD::new("Titanic");
+// borrower will be responsible of a reference of the DVD
+let borrower: &DVD = &titanic_dvd;
+// owner will be responsible of the DVD (no '&')
+let owner: DVD = titanic_dvd;
+```
+
+> Note: The symbol of a reference is '&' !
+
+[1] https://techterms.com/definition/data
+
+---
+class: middle, left
+
+# The borrowing in action
+
+You can borrow a data when you wants to own **a reference** of that data
+during a limited period of time.
+
+> Note: the period of time of a reference must be
+>  lower or equals than the lifetime of the data owner.
+
+```rust
+let titanic_dvd: DVD = DVD::new("Titanic");                 
+{                                                           
+  // `borrower` is responsible of a `titanic_dvd` reference 
+  // in the current limited scope                           
+  let borrower: &DVD = &titanic_dvd;                        
+  println!("borrower took '{}'...", borrower.get_title());  
+}                                                           
+// borrower does not exists as the scope ended,             
+// but `titanic_dvd` still exists!                          
+println!("... but the original '{}' still exists!",         
+          titanic_dvd.get_title());                         
+```
+
+---
+class: middle, left
+
+# The borrowing in action
+
+As stated in the [rust-by-example book](https://doc.rust-lang.org/rust-by-example/scope/borrow.html):
+
+> The compiler statically guarantees (via its borrow checker) that references always point to valid objects.
+
+```rust
+let borrower: &DVD;
+{
+  let titanic_dvd: DVD = DVD::new("Titanic");
+  borrower = &titanic_dvd;
+}
+// The `borrower` lifetime exceeded the `titanic_dvd` one!
+println!("the borrower owns {}", borrower.get_title());
+```
+
+```text
+error[E0597]: `titanic_dvd` does not live long enough
+  --> src/main.rs:24:14
+   |
+24 |   borrower = &titanic_dvd;
+   |              ^^^^^^^^^^^^
+```
+
+---
+class: middle, left
+
+# The borrowing in action
+
+The borrowing keeps the properties of the original data:
+
+```rust
+let titanic_dvd: DVD = DVD::new("Titanic"); // Immutable data
+let mut borrower = &mut titanic_dvd; // Mutable reference... oops!
+```
+
+```text
+error[E0596]: cannot borrow `titanic_dvd` as mutable, as it is 
+not declared as mutable
+  --> src/main.rs:23:30
+   |
+22 | let titanic_dvd: DVD = DVD::new("Titanic"); // Immutable data
+   |     ----------- help: consider changing this to be mutable
+23 | let mut borrower: &mut DVD = &mut titanic_dvd;
+   |                              ^^^^^^^^^^^^^^^^ 
+   |                              cannot borrow as mutable
+```
+
+---
+class: middle, left
+
+# The ownership in action
+
+Using the ownership, the data will **move** to the new data owner.
+
+```rust
+struct DVD<'title> { title: &'title str }
+...
+let titanic_dvd: DVD = DVD::new("Titanic");
+{
+    // the data owned by `titanic_dvd` will move to `new_owner`...
+    let new_owner: DVD = titanic_dvd;
+}
+// as the data is now owned by `new_owner`, the data
+// owned by `titanic_dvd` has been moved...
+println!("The DVD '{}' still exists!", titanic_dvd.get_title());
+```
+
+```text
+error[E0382]: borrow of moved value: `titanic_dvd`
+  --> src/main.rs:30:40
+   |
+22 | let titanic_dvd: DVD = DVD::new("Titanic");
+   |     ----------- move occurs because `titanic_dvd` 
+         has type `DVD<'_>`, which does not
+         implement the `Copy` trait
+```
+
+---
+class: middle, left
+
+# The ownership in action
+
+You can derive the `Copy` trait for `DVD` to let `new_owner` 
+owns a **deep copy** of `titanic_dvd`.  
+**Be careful**, the copy can _severely_ impacts the performance 
+of your application as the compiler will copy the value at **each** move.
+
+```rust
+#[derive(Copy, Clone)] // We accept to copy the data
+struct DVD<'title> { title: &'title str }
+...
+let titanic_dvd: DVD = DVD::new("Titanic");
+{
+    // the data owned by `titanic_dvd` will move to `new_owner`...
+    let new_owner: DVD = titanic_dvd;
+}
+// as the data has been copied, `titanic_dvd` still exists...
+println!("The DVD '{}' still exists!", titanic_dvd.get_title());
+```
+
+```text
+The DVD 'Titanic' still exists!
+```
+
+> Note: the copy is different than the reference
+> as modifying the copy does not impacts the reference (and vice-versa)!
+
+---
+class: middle, left
+
+# The ownership in action
+
+You can modify the mutable property of your object using ownership:
+
+```rust
+struct DVD<'title> { title: &'title str } // No copy / clone
+...
+let titanic_dvd: DVD = DVD::new("Titanic"); // Immutable data
+let mut new_owner = titanic_dvd; // We own now a mutable data...
+new_owner.set_title("The Full Monty"); // ... and can change it
+println!("The DVD is now '{}'", new_owner.get_title()); 
+```
+
+```text
+The DVD is now 'The Full Monty'
+```
+
+---
+class: middle, left
+
+# The ownership in action
+
+You can also **partially** move your data from a variable to another:
+
+```rust
+struct DVD<'title> { title: &'title str, owner: Company }
+...
+let titanic_dvd: DVD = DVD::new("Titanic", Company::WES_VIDEOCLUB);
+// Here, we out ONLY the company owner...
+let DVD { ref title, owner } = titanic_dvd;
+println!("The title is {}", titanic_dvd.title); // OK
+println!("The owner is {:?}", titanic_dvd.owner); // ERROR
+```
+
+```text
+error[E0382]: borrow of moved value: `titanic_dvd.owner`
+  --> src/main.rs:31:46
+   |
+29 |     let DVD { ref title, owner } = titanic_dvd;
+   |                          ----- value moved here
+30 |     println!("The title of the DVD is {}", titanic_dvd.title);
+31 |     println!("The owner of the DVD is {:?}", titanic_dvd.owner);
+   |                                              ^^^^^^^^^^^^^^^^^ 
+                                        value borrowed here after move
+```
+
+---
+class: middle, left
+
+# Conclusion
+
+Ownership and borrowing are different principles to access you data in Rust.
+
+Both have advantages and disadvantages, but you can think of those like this:
+
+* the **borrowing** lets a variable make a **_reference_** to an existing data, and can 
+modify it depending of the properties of the original data owner;
+* the **ownership** _moves_ the data owned by a variable to an other one, and 
+destroys the original variable **if** we are not in a _partial move_ case.  
+However, **if** the  original data structure derives both Copy and Clone traits, 
+it copies the data at the expense of computational performances.
+
+      
+
+    </textarea>
+  <script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript">
+  </script>
+  <script type="text/javascript">
+    var slideshow = remark.create();
+  </script>
+</body>
+
+</html>
