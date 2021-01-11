@@ -22,8 +22,10 @@ class: middle, left
 
 A (computer) data is an information processed or stored by a computer. [1]
 
-A data has a **lifetime**, limited between one instruction execution and the entire lifetime of the program that is using it.  
-In Rust, you **do not** manage yourself the lifetime of your data, but let to principles do it for you:  
+A data has a limited viable time (a **lifetime** in Rust), which can last as long
+ as the program is executed.  
+In Rust, you **do not** manage yourself the lifetimes of your data, but let two 
+principles do it for you:  
 * the **ownership**, where you own **the data**,
 * and the **borrowing**, where you own **a reference to the data**.
 
@@ -44,11 +46,11 @@ class: middle, left
 
 # The borrowing in action
 
-You can borrow a data when you wants to own **a reference** of that data
-during a limited period of time.
+You can borrow a data when you want to own **a reference** of that data
+for a limited period of time.
 
-> Note: the period of time of a reference must be
->  lower or equals than the lifetime of the data owner.
+> Note: the reference lifetime must be
+>  lower or equals than the data owner lifetime.
 
 ```rust
 let titanic_dvd: DVD = DVD::new("Titanic");                 
@@ -96,7 +98,7 @@ class: middle, left
 
 # The borrowing in action
 
-The borrowing keeps the properties of the original data:
+The borrowing keeps the properties of the original data, like its mutability state:
 
 ```rust
 let titanic_dvd: DVD = DVD::new("Titanic"); // Immutable data
@@ -120,7 +122,7 @@ class: middle, left
 
 # The ownership in action
 
-Using the ownership, the data will **move** to the new data owner.
+Unlike the borrowing, the ownership moves the data to a new data owner.
 
 ```rust
 struct DVD<'title> { title: &'title str }
@@ -150,10 +152,10 @@ class: middle, left
 
 # The ownership in action
 
-You can derive the `Copy` trait for `DVD` to let `new_owner` 
+You can derive both `Copy` and `Clone` traits for `DVD` to let `new_owner` 
 owns a **deep copy** of `titanic_dvd`.  
-**Be careful**, the copy can _severely_ impacts the performance 
-of your application as the compiler will copy the value at **each** move.
+**Be careful with a copy** as it can _severely_ impacts the performance 
+of your application.
 
 ```rust
 #[derive(Copy, Clone)] // We accept to copy the data
@@ -172,15 +174,14 @@ println!("The DVD '{}' still exists!", titanic_dvd.get_title());
 The DVD 'Titanic' still exists!
 ```
 
-> Note: the copy is different than the reference
-> as modifying the copy does not impacts the reference (and vice-versa)!
+> Note: unlike a reference, modifying a copy does not impacts the original data owner (and vice-versa)!
 
 ---
 class: middle, left
 
 # The ownership in action
 
-You can modify the mutable property of your object using ownership:
+You can modify the mutable property of your object:
 
 ```rust
 struct DVD<'title> { title: &'title str } // No copy / clone
@@ -200,7 +201,7 @@ class: middle, left
 
 # The ownership in action
 
-You can also **partially** move your data from a variable to another:
+You can also **partially** move your data, which does not destroy the original data owner:
 
 ```rust
 struct DVD<'title> { title: &'title str, owner: Company }
